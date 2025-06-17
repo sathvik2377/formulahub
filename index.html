@@ -308,12 +308,30 @@
                 const fileName = path.split('/').pop();
                 // Using the correct Cloudinary URL format for raw files
                 const cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/raw/upload/${fileName}`;
+                
+                // First check if the file exists
+                const response = await fetch(cloudinaryUrl, { method: 'HEAD' });
+                if (!response.ok) {
+                    throw new Error('PDF file not found');
+                }
+                
                 window.open(cloudinaryUrl, '_blank');
             } catch (error) {
-                showError('Failed to load PDF. Please try again later.');
+                showError('Failed to load PDF. Please make sure the file is uploaded to Cloudinary.');
                 console.error('Error loading PDF:', error);
             } finally {
                 hideLoading();
+            }
+        }
+
+        // Add a function to check if a file exists in Cloudinary
+        async function checkFileExists(fileName) {
+            try {
+                const response = await fetch(`https://res.cloudinary.com/${cloudName}/raw/upload/${fileName}`, { method: 'HEAD' });
+                return response.ok;
+            } catch (error) {
+                console.error('Error checking file:', error);
+                return false;
             }
         }
 
