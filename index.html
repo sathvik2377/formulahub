@@ -246,6 +246,19 @@
     <div class="header">
         <h1>Formula Sheets Hub</h1>
         <p class="typing-effect">Your comprehensive guide to Physics, Mathematics, and Chemistry formulas</p>
+        <button onclick="myWidget.open()" style="
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        ">
+            <i class="fas fa-upload"></i> Upload PDFs
+        </button>
     </div>
 
     <div class="search-container">
@@ -284,6 +297,24 @@
 
         // Cloudinary configuration
         const cloudName = 'dmvvzmtr0';
+        const uploadPreset = 'ml_default';
+
+        // Initialize Cloudinary
+        const myWidget = cloudinary.createUploadWidget(
+            {
+                cloudName: cloudName,
+                uploadPreset: uploadPreset,
+                sources: ['local'],
+                resourceType: 'raw',
+                multiple: true,
+                maxFiles: 100
+            },
+            (error, result) => {
+                if (!error && result && result.event === "success") {
+                    console.log("Upload successful:", result.info);
+                }
+            }
+        );
 
         function showLoading() {
             loadingOverlay.style.display = 'flex';
@@ -304,20 +335,18 @@
         async function openPDF(path) {
             try {
                 showLoading();
-                // Convert path to Cloudinary URL
                 const fileName = path.split('/').pop();
-                // Using the correct Cloudinary URL format for raw files
                 const cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/raw/upload/${fileName}`;
                 
-                // First check if the file exists
                 const response = await fetch(cloudinaryUrl, { method: 'HEAD' });
                 if (!response.ok) {
-                    throw new Error('PDF file not found');
+                    myWidget.open();
+                    throw new Error('PDF file not found. Please upload the file first.');
                 }
                 
                 window.open(cloudinaryUrl, '_blank');
             } catch (error) {
-                showError('Failed to load PDF. Please make sure the file is uploaded to Cloudinary.');
+                showError(error.message);
                 console.error('Error loading PDF:', error);
             } finally {
                 hideLoading();
