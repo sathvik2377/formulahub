@@ -6,6 +6,7 @@
     <title>Formula Sheets Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
     <style>
         :root {
             --primary-color: #4a90e2;
@@ -281,6 +282,9 @@
         const loadingOverlay = document.getElementById('loadingOverlay');
         const errorMessage = document.getElementById('errorMessage');
 
+        // Cloudinary configuration
+        const cloudName = 'dmvvzmtr0';
+
         function showLoading() {
             loadingOverlay.style.display = 'flex';
         }
@@ -300,9 +304,10 @@
         async function openPDF(path) {
             try {
                 showLoading();
-                // Convert path to GitHub raw URL
-                const githubUrl = `https://raw.githubusercontent.com/sathvik2377/formulahub/main/${path}`;
-                window.open(githubUrl, '_blank');
+                // Convert path to Cloudinary URL
+                const fileName = path.split('/').pop();
+                const cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/raw/upload/v1/${fileName}`;
+                window.open(cloudinaryUrl, '_blank');
             } catch (error) {
                 showError('Failed to load PDF. Please try again later.');
                 console.error('Error loading PDF:', error);
