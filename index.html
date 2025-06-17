@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula Sheets Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-storage-compat.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --background-color: #f5f6fa;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            animation: fadeInDown 1s ease;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease;
+        }
+
+        .subjects-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .subject-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .subject-card h2 {
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .subject-card p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .chapters-list {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .subject-card.active .chapters-list {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .chapter-item {
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .chapter-item:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateX(10px);
+        }
+
+        .chapter-item a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .search-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.2);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .typing-effect {
+            border-right: 2px solid var(--accent-color);
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--accent-color) }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: var(--accent-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            background: rgba(231, 76, 60, 0.1);
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #f3f3f3;
+            border-radius: 2px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="error-message" id="errorMessage"></div>
+
+    <div class="header">
+        <h1>Formula Sheets Hub</h1>
+        <p class="typing-effect">Your comprehensive guide to Physics, Mathematics, and Chemistry formulas</p>
+    </div>
+
+    <div class="search-container">
+        <input type="text" class="search-box" placeholder="Search for formulas..." id="searchBox">
+    </div>
+
+    <div class="subjects-container">
+        <div class="subject-card" data-subject="physics">
+            <h2><i class="fas fa-atom"></i> Physics</h2>
+            <p>Explore comprehensive physics formulas from mechanics to modern physics</p>
+            <div class="chapters-list" id="physics-chapters"></div>
+        </div>
+
+        <div class="subject-card" data-subject="mathematics">
+            <h2><i class="fas fa-square-root-alt"></i> Mathematics</h2>
+            <p>Master mathematical concepts with detailed formula sheets</p>
+            <div class="chapters-list" id="mathematics-chapters"></div>
+        </div>
+
+        <div class="subject-card" data-subject="chemistry">
+            <h2><i class="fas fa-flask"></i> Chemistry</h2>
+            <p>Access chemical formulas and equations for all topics</p>
+            <div class="chapters-list" id="chemistry-chapters"></div>
+        </div>
+
+        <div class="subject-card" data-subject="allen-handbooks">
+            <h2><i class="fas fa-book"></i> Allen Handbooks</h2>
+            <p>Comprehensive handbooks for Physics, Mathematics, and Chemistry</p>
+            <div class="chapters-list" id="allen-handbooks-chapters"></div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        async function openPDF(path) {
+            try {
+                showLoading();
+                const fileRef = storage.ref(path);
+                const url = await fileRef.getDownloadURL();
+                window.open(url, '_blank');
+            } catch (error) {
+                showError('Failed to load PDF. Please try again later.');
+                console.error('Error loading PDF:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Subject data structure
+        const subjects = {
+            physics: [
+                { number: '01', name: 'Kinematics' },
+                { number: '02', name: 'Motion in 2D' },
+                { number: '03', name: 'Circular Motion' },
+                { number: '04', name: 'Laws of Motion' },
+                { number: '05', name: 'Work, Power & Energy' },
+                { number: '06', name: 'Centre of Mass & Collision' },
+                { number: '07', name: 'Rotational Motion' },
+                { number: '08', name: 'Gravitation' },
+                { number: '09', name: 'Elasticity' },
+                { number: '10', name: 'Fluid Mechanics' },
+                { number: '11', name: 'Heat (Part 1)' },
+                { number: '12', name: 'Heat (Part 2)' },
+                { number: '13', name: 'Simple Harmonic Motion' },
+                { number: '14', name: 'Waves and Sound' },
+                { number: '15', name: 'Electrostatics' },
+                { number: '16', name: 'Capacitor' },
+                { number: '17', name: 'Current Electricity' },
+                { number: '18', name: 'Magnetic Effects of Current' },
+                { number: '19', name: 'Magnetism' },
+                { number: '20', name: 'Electromagnetic Induction' },
+                { number: '21', name: 'Alternating Current' },
+                { number: '22', name: 'Electromagnetic Waves' },
+                { number: '23', name: 'Ray Optics' },
+                { number: '24', name: 'Optical Instruments' },
+                { number: '25', name: 'Wave Optics' },
+                { number: '26', name: 'Modern Physics' },
+                { number: '27', name: 'Logic Gates' },
+                { number: '28', name: 'Semiconductors' }
+            ],
+            mathematics: [
+                { number: '01', name: 'Exponential Series & Induction' },
+                { number: '02', name: 'Functions & Relations' },
+                { number: '03', name: 'Trigonometric Ratios' },
+                { number: '04', name: 'Trigonometric Equations' },
+                { number: '05', name: 'Properties of Triangle' },
+                { number: '06', name: 'Height & Distances' },
+                { number: '07', name: 'Quadratic Equation' },
+                { number: '08', name: 'Complex Numbers' },
+                { number: '09', name: 'Permutation & Combination' },
+                { number: '10', name: 'Binomial Theorem' },
+                { number: '11', name: 'Progressions' },
+                { number: '12', name: 'Straight Line' },
+                { number: '13', name: 'Circle' },
+                { number: '14', name: 'Parabola' },
+                { number: '15', name: 'Ellipse' },
+                { number: '16', name: 'Hyperbola' },
+                { number: '17', name: 'Limits' },
+                { number: '18', name: 'Statistics' },
+                { number: '19', name: 'Inverse Trigonometry' },
+                { number: '20', name: 'Matrices' },
+                { number: '21', name: 'Determinants' },
+                { number: '22', name: 'Continuity & Differentiability' },
+                { number: '23', name: 'Increasing & Decreasing, Maxima & Minima' },
+                { number: '24', name: 'Differentiation' },
+                { number: '25', name: 'Tangent & Normal' },
+                { number: '26', name: 'Indefinite Integration' },
+                { number: '27', name: 'Area' },
+                { number: '28', name: 'Vector Algebra' },
+                { number: '29', name: 'Vector 3D' },
+                { number: '30', name: 'Probability' }
+            ],
+            chemistry: [
+                { number: '01', name: 'Some Basic Concepts of Chemistry' },
+                { number: '02', name: 'Atomic Structure' },
+                { number: '03', name: 'Periodic Properties' },
+                { number: '04', name: 'Chemical Bonding' },
+                { number: '05', name: 'States of Matter' },
+                { number: '06', name: 'Thermodynamics' },
+                { number: '07', name: 'Chemical Equilibrium' },
+                { number: '08', name: 'Ionic Equilibrium' },
+                { number: '09', name: 'Hydrogen' },
+                { number: '10', name: 'S-Block Elements' },
+                { number: '11', name: 'P-Block Elements' },
+                { number: '12', name: 'Nomenclature' },
+                { number: '13', name: 'General Organic Chemistry' },
+                { number: '14', name: 'Mechanisms Basics' },
+                { number: '15', name: 'Isomerism' },
+                { number: '16', name: 'Hydrocarbons' },
+                { number: '17', name: 'Environmental Chemistry' },
+                { number: '18', name: 'Solid State' },
+                { number: '19', name: 'Solution' },
+                { number: '20', name: 'Electrochemistry' },
+                { number: '21', name: 'Chemical Kinetics' },
+                { number: '22', name: 'Surface Chemistry' },
+                { number: '23', name: 'Metallurgy' },
+                { number: '24', name: 'D & F Block Elements' },
+                { number: '25', name: 'Coordination Compounds' },
+                { number: '26', name: 'Halogen Derivatives' },
+                { number: '27', name: 'Alcohol, Phenol & Ether' },
+                { number: '28', name: 'Aldehydes & Ketones' },
+                { number: '29', name: 'Carboxylic Acids' },
+                { number: '30', name: 'Amines' },
+                { number: '31', name: 'Biomolecules' },
+                { number: '32', name: 'Polymers' },
+                { number: '33', name: 'Chemistry in Everyday Life' },
+                { number: '34', name: 'Qualitative Analysis' }
+            ],
+            'allen-handbooks': [
+                { 
+                    number: '01', 
+                    name: 'Allen Physics Handbook',
+                    path: 'allen-handbooks/Allen Physics Handbook.pdf'
+                },
+                { 
+                    number: '02', 
+                    name: 'Allen Mathematics Handbook',
+                    path: 'allen-handbooks/Allen Maths Handbook.pdf'
+                },
+                { 
+                    number: '03', 
+                    name: 'Allen Chemistry Handbook',
+                    path: 'allen-handbooks/Allen Chemistry Handbook.pdf'
+                }
+            ]
+        };
+
+        // Populate chapters
+        function populateChapters() {
+            for (const [subject, chapters] of Object.entries(subjects)) {
+                const chaptersList = document.getElementById(`${subject}-chapters`);
+                chapters.forEach(chapter => {
+                    const chapterItem = document.createElement('div');
+                    chapterItem.className = 'chapter-item';
+                    
+                    if (subject === 'allen-handbooks') {
+                        chapterItem.innerHTML = `
+                            <a href="#" onclick="event.preventDefault(); openPDF('${chapter.path}')">
+                                ${chapter.number}. ${chapter.name}
+                            </a>
+                        `;
+                    } else {
+                        const pdfPath = `${subject}/${chapter.number}_${chapter.name.toLowerCase().replace(/\s+/g, '_')}_formula_sheets_getmarks_app.pdf`;
+                        chapterItem.innerHTML = `
+                            <a href="#" onclick="event.preventDefault(); openPDF('${pdfPath}')">
+                                ${chapter.number}. ${chapter.name}
+                            </a>
+                        `;
+                    }
+                    
+                    chaptersList.appendChild(chapterItem);
+                });
+            }
+        }
+
+        // Toggle subject cards
+        document.querySelectorAll('.subject-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.classList.toggle('active');
+            });
+        });
+
+        // Search functionality
+        const searchBox = document.getElementById('searchBox');
+        searchBox.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.chapter-item').forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+        });
+
+        // Initialize
+        populateChapters();
+    </script>
+</body>
+</html>
