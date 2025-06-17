@@ -306,7 +306,8 @@
                 showLoading();
                 // Convert path to Cloudinary URL
                 const fileName = path.split('/').pop();
-                const cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/raw/upload/v1/${fileName}`;
+                // Using the correct Cloudinary URL format for raw files
+                const cloudinaryUrl = `https://res.cloudinary.com/${cloudName}/raw/upload/${fileName}`;
                 window.open(cloudinaryUrl, '_blank');
             } catch (error) {
                 showError('Failed to load PDF. Please try again later.');
